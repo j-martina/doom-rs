@@ -1,0 +1,2 @@
+[workspace]
+members = ["doomfront", "stardate", "subterra"]

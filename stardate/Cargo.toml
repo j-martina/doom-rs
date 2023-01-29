@@ -1,0 +1,15 @@
+[package]
+name = "stardate"
+version = "0.0.0"
+edition = "2021"
+
+authors = ["Jerome Martina"]
+categories = ["encoding", "game-development", "parser-implementations"]
+description = "Doom map encoder/decoder"
+homepage = "https://github.com/j-martina/doom-rs/"
+keywords = ["doom", "encoding", "gamedev", "parser"]
+license = ""
+publish = false
+repository = "https://github.com/j-martina/doom-rs/"
+
+[dependencies]

@@ -1,0 +1,15 @@
+[package]
+name = "subterra"
+version = "0.0.0"
+edition = "2021"
+
+authors = ["Jerome Martina"]
+categories = ["encoding", "multimedia", "parser-implementations"]
+description = "Parser for the MUS MIDI format"
+homepage = "https://github.com/j-martina/doom-rs/"
+keywords = ["audio", "encoding", "doom", "midi", "parser"]
+license = ""
+publish = false
+repository = "https://github.com/j-martina/doom-rs/"
+
+[dependencies]

@@ -1,0 +1,26 @@
+[package]
+name = "doomfront"
+version = "0.0.0"
+edition = "2021"
+
+authors = ["Jerome Martina"]
+categories = ["encoding", "game-development", "parser-implementations"]
+description = "Frontends for Doom DSLs"
+homepage = "https://github.com/j-martina/doom-rs/"
+keywords = ["doom", "dsl", "encoding", "gamedev", "parser"]
+license = ""
+publish = false
+repository = "https://github.com/j-martina/doom-rs/"
+
+[features]
+default = []
+ser_de = ["serde", "rowan/serde", "zscript_parser/serialize"]
+
+[dependencies]
+chumsky = "0.8.0"
+rowan = "0.15.10"
+serde = { version = "1.0.152", features = ["derive"], optional = true }
+zscript_parser = { version = "0.2.0", features = [
+	"gzd_folder_filesystem",
+	"multithreaded",
+] }
