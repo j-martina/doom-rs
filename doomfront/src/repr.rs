@@ -22,7 +22,7 @@ pub struct ParseTree<L: LangExt> {
 
 impl<L: LangExt> ParseTree<L> {
 	#[must_use]
-	pub(crate) fn new(root: GreenNode, errors: Vec<ParseError>) -> Self {
+	pub fn new(root: GreenNode, errors: Vec<ParseError>) -> Self {
 		let zipper = SyntaxNode::new_root(root.clone());
 
 		Self {

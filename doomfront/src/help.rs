@@ -59,7 +59,7 @@ where
 
 /// Like [`map_collect`] but does not wrap the new node in a [`ParseOut`].
 /// For use when creating a source's root node.
-pub(crate) fn map_finish<L>(syn: L::Kind) -> impl Fn(Vec<ParseOut>) -> GreenNode
+pub fn map_finish<L>(syn: L::Kind) -> impl Fn(Vec<ParseOut>) -> GreenNode
 where
 	L: rowan::Language,
 	L::Kind: Into<SyntaxKind>,
