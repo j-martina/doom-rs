@@ -2,6 +2,8 @@
 
 use rowan::{ast::AstNode, NodeOrToken, SyntaxNode, SyntaxToken};
 
+use crate::simple_astnode;
+
 use super::Syn;
 
 /// Abstract syntax tree node representing a whole CVar definition.
@@ -74,31 +76,7 @@ impl CVar {
 	}
 }
 
-impl AstNode for CVar {
-	type Language = Syn;
-
-	fn can_cast(kind: Syn) -> bool
-	where
-		Self: Sized,
-	{
-		kind == Syn::Definition
-	}
-
-	fn cast(node: SyntaxNode<Syn>) -> Option<Self>
-	where
-		Self: Sized,
-	{
-		if Self::can_cast(node.kind()) {
-			Some(Self(node))
-		} else {
-			None
-		}
-	}
-
-	fn syntax(&self) -> &SyntaxNode<Syn> {
-		&self.0
-	}
-}
+simple_astnode!(Syn, CVar, Syn::Definition);
 
 /// Abstract syntax tree node representing the scope specifier and qualifiers.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -142,31 +120,7 @@ impl Flags {
 	}
 }
 
-impl AstNode for Flags {
-	type Language = Syn;
-
-	fn can_cast(kind: Syn) -> bool
-	where
-		Self: Sized,
-	{
-		matches!(kind, Syn::Flags)
-	}
-
-	fn cast(node: SyntaxNode<Syn>) -> Option<Self>
-	where
-		Self: Sized,
-	{
-		if Self::can_cast(node.kind()) {
-			Some(Self(node))
-		} else {
-			None
-		}
-	}
-
-	fn syntax(&self) -> &SyntaxNode<Syn> {
-		&self.0
-	}
-}
+simple_astnode!(Syn, Flags, Syn::Flags);
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 #[repr(transparent)]
@@ -185,28 +139,4 @@ impl Default {
 	}
 }
 
-impl AstNode for Default {
-	type Language = Syn;
-
-	fn can_cast(kind: Syn) -> bool
-	where
-		Self: Sized,
-	{
-		kind == Syn::DefaultDef
-	}
-
-	fn cast(node: SyntaxNode<Syn>) -> Option<Self>
-	where
-		Self: Sized,
-	{
-		if Self::can_cast(node.kind()) {
-			Some(Self(node))
-		} else {
-			None
-		}
-	}
-
-	fn syntax(&self) -> &SyntaxNode<Syn> {
-		&self.0
-	}
-}
+simple_astnode!(Syn, Default, Syn::DefaultDef);

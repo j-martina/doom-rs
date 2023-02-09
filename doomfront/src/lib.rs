@@ -51,3 +51,37 @@ pub trait LangExt: rowan::Language {
 pub trait LangComment: rowan::Language {
 	const SYN_COMMENT: Self::Kind;
 }
+
+/// The most basic implementors for [`AstNode`] are newtypes (single-element
+/// tuple structs) which map to a single syntax tag. Automatically generating
+/// `AstNode` implementations for these is trivial.
+#[macro_export]
+macro_rules! simple_astnode {
+	($lang:ty, $node:ty, $syn_kind:expr) => {
+		impl AstNode for $node {
+			type Language = $lang;
+
+			fn can_cast(kind: <Self::Language as rowan::Language>::Kind) -> bool
+			where
+				Self: Sized,
+			{
+				kind == $syn_kind
+			}
+
+			fn cast(node: SyntaxNode<Self::Language>) -> Option<Self>
+			where
+				Self: Sized,
+			{
+				if node.kind() == $syn_kind {
+					Some(Self(node))
+				} else {
+					None
+				}
+			}
+
+			fn syntax(&self) -> &SyntaxNode<Self::Language> {
+				&self.0
+			}
+		}
+	};
+}
