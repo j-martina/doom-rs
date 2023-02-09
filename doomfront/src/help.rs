@@ -53,6 +53,15 @@ pub fn map_push_opt() -> impl Fn((Vec<ParseOut>, Option<ParseOut>)) -> Vec<Parse
 	}
 }
 
+/// Returns a closure that appends the content of vec 2 to vec 1, and then returns vec 1.
+/// Pass this closure to [`chumsky::Parser::map`].
+pub fn map_append() -> impl Fn((Vec<ParseOut>, Vec<ParseOut>)) -> Vec<ParseOut> {
+	|(mut vec1, mut vec2)| {
+		vec1.append(&mut vec2);
+		vec1
+	}
+}
+
 /// Returns a closure that makes a [`GreenNode`] from [`ParseOut`] children.
 /// Pass this closure to [`chumsky::Parser::map`].
 pub fn map_collect<L>(syn: L::Kind) -> impl Fn(Vec<ParseOut>) -> ParseOut
