@@ -33,8 +33,8 @@ impl<L: LangExt> ParseTree<L> {
 	}
 
 	/// The "zipper tree" (or "cursor tree") is a more convenient way of reading
-	/// the "raw" green tree accessible via [`Self::raw`]. This tree contains
-	/// parent pointers and identity information
+	/// the "raw" green tree accessible via [`Self::raw`], as it contains
+	/// parent pointers and identity information.
 	#[must_use]
 	pub fn zipper(&self) -> &SyntaxNode<L> {
 		&self.zipper
