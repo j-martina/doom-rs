@@ -12,6 +12,7 @@ use rowan::{GreenToken, SyntaxKind};
 use crate::{LangComment, LangExt, ParseError, ParseOut};
 
 /// Analogous to [`chumsky::primitive::just`].
+/// Emits a [`GreenToken`] wrapped in a [`rowan::NodeOrToken::Token`].
 pub fn just<L>(
 	inputs: &'static str,
 	syn: L::Kind,
@@ -103,6 +104,18 @@ where
 #[must_use]
 pub fn ascii_digit() -> chumsky::primitive::OneOf<char, &'static str, ParseError> {
 	primitive::one_of("0123456789")
+}
+
+/// Shorthand for `chumsky::primitive::one_of("0123456abcdefABCDEF")`.
+#[must_use]
+pub fn hex_digit() -> chumsky::primitive::OneOf<char, &'static str, ParseError> {
+	primitive::one_of("0123456abcdefABCDEF")
+}
+
+/// Shorthand for `chumsky::primitive::one_of("01234567")`.
+#[must_use]
+pub fn oct_digit() -> chumsky::primitive::OneOf<char, &'static str, ParseError> {
+	primitive::one_of("01234567")
 }
 
 /// C/C++-style integer literals (`z` suffix excluded) for (G)ZDoom.

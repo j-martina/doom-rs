@@ -16,6 +16,16 @@ where
 	move |_, span| ParseOut::Token(GreenToken::new(syn.into(), &src[span]))
 }
 
+/// Returns a closure that inserts a [`ParseOut`] node into another [`ParseOut`] node.
+/// Pass this closure to [`chumsky::Parser::map`].
+pub fn map_node<L>(syn: L::Kind) -> impl Fn(ParseOut) -> ParseOut
+where
+	L: rowan::Language,
+	L::Kind: Into<SyntaxKind> + 'static,
+{
+	move |n_or_t| ParseOut::Node(GreenNode::new(syn.into(), [n_or_t]))
+}
+
 /// Returns a closure that starts a new array of [`ParseOut`] children, to be
 /// later turned into a [`GreenNode`] (using [`map_collect`]).
 /// Pass this closure to [`chumsky::Parser::map`].
