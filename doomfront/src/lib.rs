@@ -22,7 +22,6 @@
 
 pub extern crate chumsky;
 pub extern crate rowan;
-pub extern crate zscript_parser as zscript;
 
 pub mod comb;
 pub mod cvarinfo;
