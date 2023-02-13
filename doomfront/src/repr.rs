@@ -1,5 +1,7 @@
 //! Structures for representing source code at various levels of abstraction.
 
+use std::marker::PhantomData;
+
 use rowan::{ast::AstNode, GreenNode, SyntaxNode};
 
 use crate::{LangExt, ParseError};
@@ -15,35 +17,26 @@ pub struct IncludeTree<L: LangExt> {
 /// contains no semantic information and parsers recover upon encountering errors.
 #[derive(Debug)]
 pub struct ParseTree<L: LangExt> {
-	green: GreenNode,
+	raw: RawParseTree<L>,
 	zipper: SyntaxNode<L>,
-	errors: Vec<ParseError>,
 }
 
 impl<L: LangExt> ParseTree<L> {
 	#[must_use]
-	pub fn new(root: GreenNode, errors: Vec<ParseError>) -> Self {
-		let zipper = SyntaxNode::new_root(root.clone());
+	pub fn new(raw: RawParseTree<L>) -> Self {
+		let zipper = SyntaxNode::new_root(raw.root.clone());
 
-		Self {
-			green: root,
-			zipper,
-			errors,
-		}
+		Self { raw, zipper }
 	}
 
 	/// The "zipper tree" (or "cursor tree") is a more convenient way of reading
 	/// the "raw" green tree accessible via [`Self::raw`], as it contains
 	/// parent pointers and identity information.
+	///
+	/// [`Self::raw`]: RawParseTree::raw
 	#[must_use]
 	pub fn zipper(&self) -> &SyntaxNode<L> {
 		&self.zipper
-	}
-
-	/// The "source of truth" for the parsed code.
-	#[must_use]
-	pub fn raw(&self) -> &GreenNode {
-		&self.green
 	}
 
 	/// Returns an iterator over the "top-level" abstract syntax tree nodes.
@@ -54,6 +47,42 @@ impl<L: LangExt> ParseTree<L> {
 	/// most useful part of a `ParseTree` for implementing a semantic checker.
 	pub fn ast(&self) -> impl Iterator<Item = L::AstRoot> {
 		self.zipper().children().filter_map(L::AstRoot::cast)
+	}
+}
+
+impl<L: LangExt> std::ops::Deref for ParseTree<L> {
+	type Target = RawParseTree<L>;
+
+	fn deref(&self) -> &Self::Target {
+		&self.raw
+	}
+}
+
+/// This is a counterpart to [`ParseTree`] which has not pre-constructed a zipper
+/// node, and is therefore [`Sync`]. Parsing functions emit these to allow
+/// multithreaded parsing if so desired. To convert to a more useful form with the
+/// possibility for inspecting an abstract syntax tree, use [`ParseTree::new`].
+#[derive(Debug)]
+pub struct RawParseTree<L: LangExt> {
+	root: GreenNode,
+	errors: Vec<ParseError>,
+	phantom: PhantomData<L>,
+}
+
+impl<L: LangExt> RawParseTree<L> {
+	#[must_use]
+	pub fn new(root: GreenNode, errors: Vec<ParseError>) -> Self {
+		Self {
+			root,
+			errors,
+			phantom: PhantomData,
+		}
+	}
+
+	/// The "source of truth" for the parsed code.
+	#[must_use]
+	pub fn raw(&self) -> &GreenNode {
+		&self.root
 	}
 
 	/// Were any errors encountered when parsing a token stream?
@@ -66,5 +95,10 @@ impl<L: LangExt> ParseTree<L> {
 	#[must_use]
 	pub fn errors(&self) -> &[ParseError] {
 		&self.errors
+	}
+
+	#[must_use]
+	pub fn into_errors(self) -> Vec<ParseError> {
+		self.errors
 	}
 }

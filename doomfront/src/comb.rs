@@ -27,7 +27,6 @@ where
 /// (G)ZDoom's DSLs almost always put their keywords and identifiers in an
 /// ASCII-case-insensitive namespace. Chumsky offers no good singular combinator
 /// for this, so we have our own.
-#[must_use]
 pub fn just_nc(string: &'static str) -> impl Parser<char, (), Error = ParseError> {
 	text::ident().try_map(move |s: String, span| {
 		s.eq_ignore_ascii_case(string)
@@ -101,25 +100,21 @@ where
 }
 
 /// Shorthand for `chumsky::primitive::one_of("0123456789")`.
-#[must_use]
 pub fn ascii_digit() -> chumsky::primitive::OneOf<char, &'static str, ParseError> {
 	primitive::one_of("0123456789")
 }
 
 /// Shorthand for `chumsky::primitive::one_of("0123456abcdefABCDEF")`.
-#[must_use]
 pub fn hex_digit() -> chumsky::primitive::OneOf<char, &'static str, ParseError> {
 	primitive::one_of("0123456abcdefABCDEF")
 }
 
 /// Shorthand for `chumsky::primitive::one_of("01234567")`.
-#[must_use]
 pub fn oct_digit() -> chumsky::primitive::OneOf<char, &'static str, ParseError> {
 	primitive::one_of("01234567")
 }
 
 /// C/C++-style integer literals (`z` suffix excluded) for (G)ZDoom.
-#[must_use]
 pub(crate) fn c_int<L>(
 	src: &str,
 	syn: L::Kind,
@@ -158,7 +153,6 @@ where
 	primitive::choice((hex, oct, dec))
 }
 
-#[must_use]
 pub(crate) fn c_float<L>(
 	src: &str,
 	syn: L::Kind,

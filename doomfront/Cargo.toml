@@ -17,7 +17,7 @@ default = []
 ser_de = ["serde", "rowan/serde", "zscript_parser/serialize"]
 
 [dependencies]
-chumsky = "0.8.0"
+chumsky = "0.9.0"
 rowan = "0.15.10"
 serde = { version = "1.0.152", features = ["derive"], optional = true }
 zscript_parser = { version = "0.2.0", features = [

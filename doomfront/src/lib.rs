@@ -28,9 +28,10 @@ pub mod comb;
 pub mod cvarinfo;
 pub mod help;
 mod repr;
+#[cfg(test)]
+mod test;
 
 pub use repr::*;
-use rowan::ast::AstNode;
 
 /// Combinator parsers compose [green trees] manually instead of using the provided
 /// [builder]. This type alias makes it more convenient to write these parsers.
@@ -38,13 +39,12 @@ use rowan::ast::AstNode;
 /// [green trees]: rowan::GreenNode
 /// [builder]: rowan::GreenNodeBuilder
 pub type ParseOut = rowan::NodeOrToken<rowan::GreenNode, rowan::GreenToken>;
-
 pub type ParseError = chumsky::error::Simple<char>;
 
 /// Trait adding to `rowan::Language` with useful extras.
 pub trait LangExt: rowan::Language {
 	const SYN_WHITESPACE: Self::Kind;
-	type AstRoot: AstNode<Language = Self>;
+	type AstRoot: rowan::ast::AstNode<Language = Self>;
 }
 
 /// Trait for language syntaxes that support some kind of comment.

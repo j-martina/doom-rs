@@ -1,18 +1,22 @@
+use chumsky::Parser;
+
+use crate::{test::assert_no_errors, ParseTree};
+
 use super::*;
 
 #[test]
 fn smoke() {
 	const SOURCE: &str = r#"
+
 server int egghead_roundabout;
 user float acidSurge = 0.4;
 cheat noarchive nosave string BONELESS_VENTURES = "Welcome to the Company !";
-"#;
+
+	"#;
 
 	let pt = parse_recov(SOURCE).unwrap();
-
-	for err in pt.errors() {
-		println!("{err}");
-	}
+	assert_no_errors(&pt);
+	let pt = ParseTree::new(pt);
 
 	let defs: Vec<ast::CVar> = pt.ast().collect();
 
@@ -33,4 +37,21 @@ cheat noarchive nosave string BONELESS_VENTURES = "Welcome to the Company !";
 	assert_eq!(default_1.literal().text(), "0.4");
 	assert_eq!(default_2.literal().kind(), Syn::LitString);
 	assert_eq!(default_2.literal().text(), "\"Welcome to the Company !\"");
+}
+
+#[test]
+fn tolerant() {
+	const SOURCE: &str = r#"
+
+	serve int water_water_everwhere;
+	user floa SilverLinings = 7.0;
+	cheat noarchive nosave string URBAN_DEVILRY "Lotus Base - Renovated Edition";
+
+	"#;
+
+	let p = parser_tolerant(SOURCE).parse(SOURCE).unwrap();
+
+	for c in p.children() {
+		println!("{c:#?}");
+	}
 }
