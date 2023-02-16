@@ -14,9 +14,11 @@ repository = "https://github.com/j-martina/doom-rs/"
 
 [features]
 default = []
-ser_de = ["serde", "rowan/serde"]
+ser_de = ["serde", "arrayvec/serde", "rowan/serde", "smallvec/serde"]
 
 [dependencies]
+arrayvec = "0.7.2"
 chumsky = "0.9.0"
 rowan = "0.15.10"
 serde = { version = "1.0.152", features = ["derive"], optional = true }
+smallvec = {version = "1.10.0", features = ["const_generics", "const_new"] }

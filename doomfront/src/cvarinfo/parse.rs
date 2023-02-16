@@ -1,58 +1,67 @@
-use chumsky::{primitive, text, Parser};
-use rowan::GreenNode;
+use chumsky::{primitive, recovery, text, Parser};
 
-use crate::{comb, help, ParseError, ParseOut, RawParseTree};
+use crate::{
+	comb,
+	ext::{Parser1, ParserVec},
+	help, ParseError, ParseOut,
+};
 
-use super::Syn;
+use super::{RawParseTree, Syn};
 
-pub fn parse(source: &str) -> Result<RawParseTree<Syn>, Vec<ParseError>> {
-	parser(source)
+/// Upon encountering any error, the parser will immediately stop.
+/// Prefer [`parse_recov`] since it allows providing the user with more
+/// actionable information, enabling more fixing of one's code at once.
+pub fn parse(source: &str) -> Result<RawParseTree, Vec<ParseError>> {
+	let parser = primitive::choice((wsp_ext(source), definition(source)))
+		.repeated()
+		.collect_g::<Syn, { Syn::Root as u16 }>();
+
+	parser
 		.parse(source)
 		.map(|root| RawParseTree::new(root, vec![]))
 }
 
-pub fn parse_recov(source: &str) -> Option<RawParseTree<Syn>> {
-	let (root, errs) = parser(source).parse_recovery(source);
+/// "Recoverable parse". Unless `source` has no tokens whatsoever, this always
+/// emits `Some`, although the returned tree may have errors attached.
+///
+/// When faced with unexpected input, the parser raises an error and then tries
+/// to skip ahead to the next CVar definition, carriage return, or newline.
+/// All input between the error location and the next valid thing gets wrapped
+/// into a token tagged [`Syn::Unknown`].
+#[must_use]
+pub fn parse_recov(source: &str) -> Option<RawParseTree> {
+	let parser = primitive::choice((
+		wsp_ext(source),
+		definition(source).recover_with(recovery::skip_parser(recover(source))),
+	))
+	.repeated()
+	.collect_g::<Syn, { Syn::Root as u16 }>();
+
+	let (root, errs) = parser.parse_recovery(source);
+
 	root.map(|r| RawParseTree::new(r, errs))
 }
 
-pub fn parser(src: &str) -> impl Parser<char, GreenNode, Error = ParseError> + '_ {
-	primitive::choice((wsp_ext(src), definition(src)))
-		.labelled("0 or more CVar definitions")
-		.repeated()
-		.map(help::map_finish::<Syn>(Syn::Root))
-}
-
-pub fn parser_tolerant(src: &str) -> impl Parser<char, GreenNode, Error = ParseError> + '_ {
-	primitive::choice((wsp_ext(src), definition(src), unknown(src)))
-		.repeated()
-		.map(help::map_finish::<Syn>(Syn::Root))
-}
-
-fn definition(src: &str) -> impl Parser<char, ParseOut, Error = ParseError> + '_ {
+fn definition(src: &str) -> impl Parser<char, ParseOut, Error = ParseError> + Clone + '_ {
 	flags(src)
-		.map(help::map_nvec())
-		.then(type_spec(src))
-		.map(help::map_push())
-		.then(wsp_ext(src))
-		.map(help::map_push())
-		.then(text::ident().map_with_span(help::map_tok::<Syn, _>(src, Syn::Ident)))
-		.map(help::map_push())
-		.then(default(src).or_not())
-		.map(help::map_push_opt())
-		.then(comb::just::<Syn>(";", Syn::Semicolon))
-		.map(help::map_push())
-		.map(help::map_collect::<Syn>(Syn::Definition))
+		.start_vec()
+		.chain_push(type_spec(src))
+		.chain_append(wsp_ext(src).repeated().at_least(1))
+		.chain_push(text::ident().map_with_span(help::map_tok::<Syn, _>(src, Syn::Ident)))
+		.chain_push_opt(default(src).or_not())
+		.chain_push(comb::just::<Syn, _>(';', Syn::Semicolon, src))
+		.collect_n::<Syn, { Syn::Definition as u16 }>()
 }
 
-fn flags(src: &str) -> impl Parser<char, ParseOut, Error = ParseError> + '_ {
+fn flags(src: &str) -> impl Parser<char, ParseOut, Error = ParseError> + Clone + '_ {
 	primitive::choice((flag(src), wsp_ext(src)))
 		.repeated()
 		.at_least(1)
-		.map(help::map_collect::<Syn>(Syn::Flags))
+		.labelled("flags or scope specifiers")
+		.collect_n::<Syn, { Syn::Flags as u16 }>()
 }
 
-fn flag(src: &str) -> impl Parser<char, ParseOut, Error = ParseError> + '_ {
+fn flag(src: &str) -> impl Parser<char, ParseOut, Error = ParseError> + Clone + '_ {
 	primitive::choice((
 		comb::just_nc("server").map_with_span(help::map_tok::<Syn, _>(src, Syn::KwServer)),
 		comb::just_nc("user").map_with_span(help::map_tok::<Syn, _>(src, Syn::KwUser)),
@@ -61,9 +70,10 @@ fn flag(src: &str) -> impl Parser<char, ParseOut, Error = ParseError> + '_ {
 		comb::just_nc("cheat").map_with_span(help::map_tok::<Syn, _>(src, Syn::KwCheat)),
 		comb::just_nc("latch").map_with_span(help::map_tok::<Syn, _>(src, Syn::KwLatch)),
 	))
+	.labelled("flag keyword")
 }
 
-fn type_spec(src: &str) -> impl Parser<char, ParseOut, Error = ParseError> + '_ {
+fn type_spec(src: &str) -> impl Parser<char, ParseOut, Error = ParseError> + Clone + '_ {
 	primitive::choice((
 		comb::just_nc("int").map_with_span(help::map_tok::<Syn, _>(src, Syn::TypeInt)),
 		comb::just_nc("float").map_with_span(help::map_tok::<Syn, _>(src, Syn::TypeFloat)),
@@ -71,9 +81,10 @@ fn type_spec(src: &str) -> impl Parser<char, ParseOut, Error = ParseError> + '_ 
 		comb::just_nc("color").map_with_span(help::map_tok::<Syn, _>(src, Syn::TypeColor)),
 		comb::just_nc("string").map_with_span(help::map_tok::<Syn, _>(src, Syn::TypeString)),
 	))
+	.labelled("type specifier")
 }
 
-fn default(src: &str) -> impl Parser<char, ParseOut, Error = ParseError> + '_ {
+fn default(src: &str) -> impl Parser<char, ParseOut, Error = ParseError> + Clone + '_ {
 	let escape = primitive::just('\\').ignore_then(
 		primitive::just('\\')
 			.or(primitive::just('a').to('\x07'))
@@ -95,8 +106,8 @@ fn default(src: &str) -> impl Parser<char, ParseOut, Error = ParseError> + '_ {
 					.validate(|digits, span, emit| {
 						char::from_u32(u32::from_str_radix(&digits, 16).unwrap()).unwrap_or_else(
 							|| {
-								emit(ParseError::custom(span, "invalid unicode character"));
-								'\u{FFFD}' // unicode replacement character
+								emit(ParseError::custom(span, "invalid UTF-8 character"));
+								'\u{FFFD}' // Unicode replacement character
 							},
 						)
 					}),
@@ -106,8 +117,8 @@ fn default(src: &str) -> impl Parser<char, ParseOut, Error = ParseError> + '_ {
 	let lit = primitive::choice((
 		comb::c_float::<Syn>(src, Syn::LitFloat).labelled("floating-point literal"),
 		comb::c_int::<Syn>(src, Syn::LitInt).labelled("integer literal"),
-		comb::just::<Syn>("true", Syn::LitTrue),
-		comb::just::<Syn>("false", Syn::LitFalse),
+		comb::just::<Syn, _>("true", Syn::LitTrue, src),
+		comb::just::<Syn, _>("false", Syn::LitFalse, src),
 		primitive::just('"')
 			.then(
 				primitive::filter(|&c| c != '\\' && c != '"')
@@ -120,25 +131,19 @@ fn default(src: &str) -> impl Parser<char, ParseOut, Error = ParseError> + '_ {
 	));
 
 	wsp_ext(src)
-		.or_not()
-		.map(help::map_nvec_opt())
-		.then(comb::just::<Syn>("=", Syn::Eq))
-		.map(help::map_push())
-		.then(wsp_ext(src).or_not())
-		.map(help::map_push_opt())
-		.then(lit)
-		.map(help::map_push())
-		.map(help::map_collect::<Syn>(Syn::DefaultDef))
-}
-
-fn wsp_ext(src: &str) -> impl Parser<char, ParseOut, Error = ParseError> + '_ {
-	comb::wsp_ext::<Syn, _>(src, comb::c_cpp_comment::<Syn>(src))
-}
-
-fn unknown(src: &str) -> impl Parser<char, ParseOut, Error = ParseError> + '_ {
-	wsp_ext(src)
-		.not()
 		.repeated()
 		.at_least(1)
+		.chain_push(comb::just::<Syn, _>('=', Syn::Eq, src))
+		.chain_append(wsp_ext(src).repeated())
+		.chain_push(lit)
+		.collect_n::<Syn, { Syn::DefaultDef as u16 }>()
+}
+
+fn wsp_ext(src: &str) -> impl Parser<char, ParseOut, Error = ParseError> + Clone + '_ {
+	comb::wsp_ext::<Syn, _>(comb::c_cpp_comment::<Syn>(src), src)
+}
+
+fn recover(src: &str) -> impl Parser<char, ParseOut, Error = ParseError> + Clone + '_ {
+	primitive::take_until(primitive::one_of([';', '\r', '\n']))
 		.map_with_span(help::map_tok::<Syn, _>(src, Syn::Unknown))
 }

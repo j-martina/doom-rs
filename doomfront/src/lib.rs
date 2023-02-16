@@ -25,6 +25,7 @@ pub extern crate rowan;
 
 pub mod comb;
 pub mod cvarinfo;
+pub mod ext;
 pub mod help;
 mod repr;
 #[cfg(test)]
@@ -51,9 +52,9 @@ pub trait LangComment: rowan::Language {
 	const SYN_COMMENT: Self::Kind;
 }
 
-/// The most basic implementors for [`AstNode`] are newtypes (single-element
-/// tuple structs) which map to a single syntax tag. Automatically generating
-/// `AstNode` implementations for these is trivial.
+/// The most basic implementors for [`rowan::ast::AstNode`] are newtypes
+/// (single-element tuple structs) which map to a single syntax tag. Automatically
+/// generating `AstNode` implementations for these is trivial.
 #[macro_export]
 macro_rules! simple_astnode {
 	($lang:ty, $node:ty, $syn_kind:expr) => {
@@ -67,7 +68,7 @@ macro_rules! simple_astnode {
 				kind == $syn_kind
 			}
 
-			fn cast(node: SyntaxNode<Self::Language>) -> Option<Self>
+			fn cast(node: rowan::SyntaxNode<Self::Language>) -> Option<Self>
 			where
 				Self: Sized,
 			{
@@ -78,7 +79,7 @@ macro_rules! simple_astnode {
 				}
 			}
 
-			fn syntax(&self) -> &SyntaxNode<Self::Language> {
+			fn syntax(&self) -> &rowan::SyntaxNode<Self::Language> {
 				&self.0
 			}
 		}

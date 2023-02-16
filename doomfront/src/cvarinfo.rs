@@ -12,3 +12,10 @@ mod test;
 
 pub use parse::*;
 pub use syn::*;
+
+pub type ParseTree = crate::repr::ParseTree<Syn>;
+pub type IncludeTree = crate::repr::IncludeTree<Syn>;
+pub type RawParseTree = crate::repr::RawParseTree<Syn>;
+pub type SyntaxNode = rowan::SyntaxNode<Syn>;
+pub type SyntaxToken = rowan::SyntaxToken<Syn>;
+pub type Token = rowan::SyntaxToken<Syn>;

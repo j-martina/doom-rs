@@ -8,56 +8,58 @@ use super::ast::CVar;
 #[repr(u16)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum Syn {
-	/// The `;` character, used as a terminator.
-	Semicolon = 0,
-	/// The `=` character.
-	Eq,
-	/// A name for a defined CVar.
-	Ident,
-
-	/// The scope specifier `server`.
-	KwServer,
-	/// The scope specifier `user`.
-	KwUser,
-	/// The scope specifier `nosave`.
-	KwNoSave,
-	/// The configuration flag `noarchive`.
-	KwNoArchive,
-	/// The configuration flag `cheat`.
-	KwCheat,
-	/// The configuration flag `latch`.
-	KwLatch,
-
-	/// The type specifier `int`.
-	TypeInt,
-	/// The type specifier `float`.
-	TypeFloat,
-	// The type specifier `color`.
-	TypeColor,
-	/// The type specifier `bool`.
-	TypeBool,
-	/// The type specifier `string`.
-	TypeString,
-
-	/// The boolean literal `false`.
-	LitFalse,
-	/// The boolean literal `true`.
-	LitTrue,
-	LitInt,
-	LitFloat,
-	/// Delimited by double quotes. Also used for defining default color values.
-	LitString,
-
+	/// A whole CVar definition.
+	Definition,
+	/// An `=` followed by a literal to optionally set a custom default value.
+	DefaultDef,
 	/// The set of flags qualifying a definition, scope specifiers included.
 	Flags,
 	/// The type specifier is always followed by the identifier.
 	TypeSpec,
-	/// An `=` followed by a literal to optionally set a custom default value.
-	DefaultDef,
-	/// A whole CVar definition.
-	Definition,
 
-	/// Treated like whitespace by the CVARINFO format.
+	/// The boolean literal `false`.
+	LitFalse,
+	/// A (G)ZDoom (i.e. C/C++-style) floating-point literal.
+	LitFloat,
+	/// A (G)ZDoom (i.e. C/C++-style) integer literal.
+	LitInt,
+	/// Delimited by double quotes. Also used for defining default color values.
+	LitString,
+	/// The boolean literal `true`.
+	LitTrue,
+
+	/// The type specifier `bool`.
+	TypeBool,
+	// The type specifier `color`.
+	TypeColor,
+	/// The type specifier `float`.
+	TypeFloat,
+	/// The type specifier `int`.
+	TypeInt,
+	/// The type specifier `string`.
+	TypeString,
+
+	/// The configuration flag `cheat`.
+	KwCheat,
+	/// The configuration flag `noarchive`.
+	KwNoArchive,
+	/// The scope specifier `nosave`.
+	KwNoSave,
+	/// The configuration flag `latch`.
+	KwLatch,
+	/// The scope specifier `server`.
+	KwServer,
+	/// The scope specifier `user`.
+	KwUser,
+
+	/// The `=` character.
+	Eq,
+	/// A name for a defined CVar.
+	Ident,
+	/// The `;` character, used as a terminator.
+	Semicolon,
+
+	/// CVARINFO comments use C++ syntax and are treated like whitespace.
 	Comment,
 	/// Input that the lexer considered to be invalid.
 	Unknown,

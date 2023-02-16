@@ -6,28 +6,38 @@
 
 // Q: Does performance improve if combinators don't have to capture the source?
 
-use chumsky::{primitive, text, Error, Parser};
+use chumsky::{
+	primitive::{self, OrderedContainer},
+	text, Error, Parser,
+};
 use rowan::{GreenToken, SyntaxKind};
 
-use crate::{LangComment, LangExt, ParseError, ParseOut};
+use crate::{help, LangComment, LangExt, ParseError, ParseOut};
 
-/// Analogous to [`chumsky::primitive::just`].
+/// Analogous to [`chumsky::primitive::just`], albeit followed up with [`ignored`]
+/// to prevent an unnecessary heap allocation.
 /// Emits a [`GreenToken`] wrapped in a [`rowan::NodeOrToken::Token`].
-pub fn just<L>(
-	inputs: &'static str,
+///
+/// [`ignored`]: chumsky::Parser::ignored
+pub fn just<L, C>(
+	inputs: C,
 	syn: L::Kind,
-) -> impl Parser<char, ParseOut, Error = ParseError>
+	src: &str,
+) -> impl Parser<char, ParseOut, Error = ParseError> + Clone + '_
 where
 	L: rowan::Language,
-	L::Kind: Into<SyntaxKind>,
+	L::Kind: Into<SyntaxKind> + 'static,
+	C: OrderedContainer<char> + Clone + 'static,
 {
-	primitive::just(inputs).map(move |string| ParseOut::Token(GreenToken::new(syn.into(), string)))
+	primitive::just(inputs)
+		.ignored()
+		.map_with_span(help::map_tok::<L, _>(src, syn))
 }
 
 /// (G)ZDoom's DSLs almost always put their keywords and identifiers in an
 /// ASCII-case-insensitive namespace. Chumsky offers no good singular combinator
 /// for this, so we have our own.
-pub fn just_nc(string: &'static str) -> impl Parser<char, (), Error = ParseError> {
+pub fn just_nc(string: &'static str) -> impl Parser<char, (), Error = ParseError> + Clone {
 	text::ident().try_map(move |s: String, span| {
 		s.eq_ignore_ascii_case(string)
 			.then_some(())
@@ -37,70 +47,65 @@ pub fn just_nc(string: &'static str) -> impl Parser<char, (), Error = ParseError
 
 /// The most common kind of whitespace;
 /// spaces, carriage returns, newlines, and/or tabs, repeated one or more times.
-pub fn wsp<L>(src: &str) -> impl Parser<char, ParseOut, Error = ParseError> + '_
+pub fn wsp<L>(src: &str) -> impl Parser<char, ParseOut, Error = ParseError> + Clone + '_
 where
 	L: LangExt,
-	L::Kind: Into<SyntaxKind>,
+	L::Kind: Into<SyntaxKind> + 'static,
 {
 	primitive::one_of([' ', '\r', '\n', '\t'])
 		.repeated()
 		.at_least(1)
-		.map_with_span(|_, span| {
-			ParseOut::Token(GreenToken::new(L::SYN_WHITESPACE.into(), &src[span]))
-		})
+		.ignored()
+		.map_with_span(help::map_tok::<L, _>(src, L::SYN_WHITESPACE))
 }
 
 /// For languages that treat comments as though they were whitespace.
-pub fn wsp_ext<'src, L, C>(
+pub fn wsp_ext<'src, L, P>(
+	comment: P,
 	src: &'src str,
-	comment: C,
-) -> impl Parser<char, ParseOut, Error = ParseError> + 'src
+) -> impl Parser<char, ParseOut, Error = ParseError> + Clone + 'src
 where
 	L: LangExt,
 	L::Kind: Into<SyntaxKind> + 'static,
-	C: Parser<char, ParseOut, Error = ParseError> + 'src,
+	P: Parser<char, ParseOut, Error = ParseError> + Clone + 'src,
 {
 	primitive::choice((wsp::<L>(src), comment))
 }
 
 /// Single-line comments delimited by `//`. Used by ACS and (G)ZDoom's languages.
-pub fn cpp_comment<L>(src: &str) -> impl Parser<char, ParseOut, Error = ParseError> + '_
+pub fn cpp_comment<L>(src: &str) -> impl Parser<char, ParseOut, Error = ParseError> + Clone + '_
 where
 	L: LangComment,
-	L::Kind: Into<SyntaxKind>,
+	L::Kind: Into<SyntaxKind> + 'static,
 {
 	primitive::just("//")
 		.then(primitive::take_until(text::newline()))
-		.map_with_span(|_, span| {
-			ParseOut::Token(GreenToken::new(L::SYN_COMMENT.into(), &src[span]))
-		})
+		.map_with_span(help::map_tok::<L, _>(src, L::SYN_COMMENT))
 }
 
 /// Multi-line comments delimited by `/*` and `*/`.
 /// Used by ACS and (G)ZDoom's languages.
-pub fn c_comment<L>(src: &str) -> impl Parser<char, ParseOut, Error = ParseError> + '_
+pub fn c_comment<L>(src: &str) -> impl Parser<char, ParseOut, Error = ParseError> + Clone + '_
 where
 	L: LangComment,
-	L::Kind: Into<SyntaxKind>,
+	L::Kind: Into<SyntaxKind> + 'static,
 {
 	primitive::just("/*")
 		.then(primitive::take_until(primitive::just("*/")))
-		.map_with_span(|_, span| {
-			ParseOut::Token(GreenToken::new(L::SYN_COMMENT.into(), &src[span]))
-		})
+		.map_with_span(help::map_tok::<L, _>(src, L::SYN_COMMENT))
 }
 
 /// Shorthand for `primitive::choice((c_comment::<L>(src), cpp_comment::<L>(src)))`.
-pub fn c_cpp_comment<L>(src: &str) -> impl Parser<char, ParseOut, Error = ParseError> + '_
+pub fn c_cpp_comment<L>(src: &str) -> impl Parser<char, ParseOut, Error = ParseError> + Clone + '_
 where
 	L: LangComment,
-	L::Kind: Into<SyntaxKind>,
+	L::Kind: Into<SyntaxKind> + 'static,
 {
 	primitive::choice((c_comment::<L>(src), cpp_comment::<L>(src)))
 }
 
 /// Shorthand for `chumsky::primitive::one_of("0123456789")`.
-pub fn ascii_digit() -> chumsky::primitive::OneOf<char, &'static str, ParseError> {
+pub fn dec_digit() -> chumsky::primitive::OneOf<char, &'static str, ParseError> {
 	primitive::one_of("0123456789")
 }
 
@@ -115,10 +120,10 @@ pub fn oct_digit() -> chumsky::primitive::OneOf<char, &'static str, ParseError> 
 }
 
 /// C/C++-style integer literals (`z` suffix excluded) for (G)ZDoom.
-pub(crate) fn c_int<L>(
+pub fn c_int<L>(
 	src: &str,
 	syn: L::Kind,
-) -> impl Parser<char, ParseOut, Error = ParseError> + '_
+) -> impl Parser<char, ParseOut, Error = ParseError> + Clone + '_
 where
 	L: rowan::Language + 'static,
 	L::Kind: Into<SyntaxKind>,
@@ -153,40 +158,41 @@ where
 	primitive::choice((hex, oct, dec))
 }
 
-pub(crate) fn c_float<L>(
+// C/C++-style float literals for (G)ZDoom.
+pub fn c_float<L>(
 	src: &str,
 	syn: L::Kind,
-) -> impl Parser<char, ParseOut, Error = ParseError> + '_
+) -> impl Parser<char, ParseOut, Error = ParseError> + Clone + '_
 where
 	L: rowan::Language + 'static,
 	L::Kind: Into<SyntaxKind>,
 {
 	let fl_exp = primitive::one_of(['e', 'E'])
 		.then(primitive::one_of(['+', '-']).or_not())
-		.then(ascii_digit().repeated().at_least(1));
+		.then(dec_digit().repeated().at_least(1));
 
 	let fl_suffix = primitive::one_of(['f', 'F']);
 
-	let no_point = ascii_digit()
+	let no_point = dec_digit()
 		.repeated()
 		.at_least(1)
 		.then(fl_exp.clone())
 		.then(fl_suffix.clone().or_not())
 		.map_with_span(move |_, span| ParseOut::Token(GreenToken::new(syn.into(), &src[span])));
 
-	let l_opt = ascii_digit()
+	let l_opt = dec_digit()
 		.repeated()
 		.then(primitive::just('.'))
-		.then(ascii_digit().repeated().at_least(1))
+		.then(dec_digit().repeated().at_least(1))
 		.then(fl_exp.clone().or_not())
 		.then(fl_suffix.clone().or_not())
 		.map_with_span(move |_, span| ParseOut::Token(GreenToken::new(syn.into(), &src[span])));
 
-	let r_opt = ascii_digit()
+	let r_opt = dec_digit()
 		.repeated()
 		.at_least(1)
 		.then(primitive::just('.'))
-		.then(ascii_digit().repeated())
+		.then(dec_digit().repeated())
 		.then(fl_exp.or_not())
 		.then(fl_suffix.or_not())
 		.map_with_span(move |_, span| ParseOut::Token(GreenToken::new(syn.into(), &src[span])));

@@ -1,5 +1,3 @@
-use chumsky::Parser;
-
 use crate::{test::assert_no_errors, ParseTree};
 
 use super::*;
@@ -8,9 +6,10 @@ use super::*;
 fn smoke() {
 	const SOURCE: &str = r#"
 
+// Rue des Acacias
 server int egghead_roundabout;
 user float acidSurge = 0.4;
-cheat noarchive nosave string BONELESS_VENTURES = "Welcome to the Company !";
+cheat noarchive nosave string /* comment? */ BONELESS_VENTURES = "Welcome to the Company !";
 
 	"#;
 
@@ -18,7 +17,7 @@ cheat noarchive nosave string BONELESS_VENTURES = "Welcome to the Company !";
 	assert_no_errors(&pt);
 	let pt = ParseTree::new(pt);
 
-	let defs: Vec<ast::CVar> = pt.ast().collect();
+	let defs: Vec<_> = pt.ast().collect();
 
 	assert_eq!(defs[0].name().text(), "egghead_roundabout");
 	assert_eq!(defs[1].name().text(), "acidSurge");
@@ -40,18 +39,19 @@ cheat noarchive nosave string BONELESS_VENTURES = "Welcome to the Company !";
 }
 
 #[test]
-fn tolerant() {
+fn err_handling() {
 	const SOURCE: &str = r#"
 
-	serve int water_water_everwhere;
-	user floa SilverLinings = 7.0;
-	cheat noarchive nosave string URBAN_DEVILRY "Lotus Base - Renovated Edition";
+	server int theumpteenthcircle = ;
+	user float ICEANDFIRE3 = 0.4;
 
 	"#;
 
-	let p = parser_tolerant(SOURCE).parse(SOURCE).unwrap();
+	let rpt = parse_recov(SOURCE).unwrap();
 
-	for c in p.children() {
-		println!("{c:#?}");
-	}
+	assert!(rpt.errors().len() == 1);
+
+	let pt = ParseTree::new(rpt);
+
+	assert!(pt.ast().count() == 1);
 }

@@ -45,6 +45,11 @@ impl<L: LangExt> ParseTree<L> {
 	/// tree nodes are thin wrappers over [`SyntaxNode`]s that expose methods
 	/// allowing language-specific introspection into source details. This is the
 	/// most useful part of a `ParseTree` for implementing a semantic checker.
+	///
+	/// It is important to note that while a language's grammar may mandate
+	/// certain syntax elements in certain places, parsers which tolerate or can
+	/// recover from errors will necessarily produce broken syntax trees, and so
+	/// AST interfaces may return `Option` unintuitively.
 	pub fn ast(&self) -> impl Iterator<Item = L::AstRoot> {
 		self.zipper().children().filter_map(L::AstRoot::cast)
 	}

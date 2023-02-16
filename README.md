@@ -31,6 +31,12 @@ at your option. The license chosen covers all source within these libraries, whi
 
 ---
 
+### doomfront
+
+- arrayvec
+    - By [@bluss](https://github.com/bluss) et al.
+    - Provided under the [Apache 2.0 License](https://github.com/bluss/arrayvec/blob/master/LICENSE-APACHE) and [MIT License](https://github.com/bluss/arrayvec/blob/master/LICENSE-MIT).
+    - https://docs.rs/arrayvec/latest/arrayvec/
 - chumsky
     - By Joshua Barretto ([@zesterer](https://github.com/zesterer)) et al.
     - Provided under the [MIT License](https://github.com/zesterer/chumsky/blob/master/LICENSE).
@@ -42,3 +48,7 @@ at your option. The license chosen covers all source within these libraries, whi
 	- By the [serde-rs](https://github.com/serde-rs) organisation et al.
 	- Provided under the [Apache 2.0 License](https://github.com/serde-rs/serde/blob/master/LICENSE-APACHE) and [MIT License](https://github.com/serde-rs/serde/blob/master/LICENSE-MIT).
 	- https://docs.rs/serde/latest/serde/
+- smallvec
+    - By Matt Brubeck ([@mbrubeck](https://github.com/mbrubeck)) et al.
+    - Provided under the [Apache 2.0 License](https://github.com/servo/rust-smallvec/blob/master/LICENSE-APACHE) and [MIT License](https://github.com/servo/rust-smallvec/blob/master/LICENSE-MIT).
+    - https://docs.rs/smallvec/latest/smallvec/
