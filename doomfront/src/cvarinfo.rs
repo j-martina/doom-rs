@@ -1,5 +1,5 @@
 //! Parser and syntax trees for the [`CVARINFO`](https://zdoom.org/wiki/CVARINFO)
-//! lump defined by ZDoom-family source ports.
+//! language defined by ZDoom-family source ports.
 //!
 //! Console variables or "CVars" are ZDoom's way of storing user preferences
 //! and the de facto solution for persistent storage.

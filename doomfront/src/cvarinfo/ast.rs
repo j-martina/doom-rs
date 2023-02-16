@@ -8,6 +8,7 @@ use super::{Syn, SyntaxNode, SyntaxToken};
 
 /// Abstract syntax tree node representing a whole CVar definition.
 #[derive(Debug, Clone, PartialEq, Eq)]
+#[cfg_attr(feature = "ser_de", derive(serde::Serialize))]
 #[repr(transparent)]
 pub struct CVar(SyntaxNode);
 
@@ -80,6 +81,7 @@ simple_astnode!(Syn, CVar, Syn::Definition);
 
 /// Abstract syntax tree node representing the scope specifier and qualifiers.
 #[derive(Debug, Clone, PartialEq, Eq)]
+#[cfg_attr(feature = "ser_de", derive(serde::Serialize))]
 #[repr(transparent)]
 pub struct Flags(SyntaxNode);
 
@@ -123,6 +125,7 @@ impl Flags {
 simple_astnode!(Syn, Flags, Syn::Flags);
 
 #[derive(Debug, Clone, PartialEq, Eq)]
+#[cfg_attr(feature = "ser_de", derive(serde::Serialize))]
 #[repr(transparent)]
 pub struct Default(SyntaxNode);
 

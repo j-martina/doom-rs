@@ -9,6 +9,7 @@ use crate::{LangExt, ParseError};
 /// The (G)ZDoom MAPINFO, DECORATE, and ZScript file formats all support the use
 /// of C-like `#include` directives to build a tree of files from a root.
 #[derive(Debug)]
+#[cfg_attr(feature = "ser_de", derive(serde::Serialize))]
 pub struct IncludeTree<L: LangExt> {
 	pub files: Vec<ParseTree<L>>,
 }
@@ -16,7 +17,9 @@ pub struct IncludeTree<L: LangExt> {
 /// Represents a source string. It may not necessarily represent valid code; it
 /// contains no semantic information and parsers recover upon encountering errors.
 #[derive(Debug)]
+#[cfg_attr(feature = "ser_de", derive(serde::Serialize))]
 pub struct ParseTree<L: LangExt> {
+	#[cfg_attr(feature = "ser_de", serde(skip))]
 	raw: RawParseTree<L>,
 	zipper: SyntaxNode<L>,
 }

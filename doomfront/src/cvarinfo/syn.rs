@@ -5,8 +5,9 @@ use crate::{LangComment, LangExt};
 use super::ast::CVar;
 
 /// CVARINFO syntax nodes, from low-level primitives to high-level composites.
-#[repr(u16)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[cfg_attr(feature = "ser_de", derive(serde::Serialize))]
+#[repr(u16)]
 pub enum Syn {
 	/// A whole CVar definition.
 	Definition,
