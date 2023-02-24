@@ -24,6 +24,7 @@ pub extern crate chumsky;
 pub extern crate rowan;
 
 pub mod cvarinfo;
+pub mod decorate;
 
 pub mod comb;
 pub mod ext;
