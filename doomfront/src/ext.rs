@@ -1,6 +1,6 @@
 //! Traits extending [`chumsky::Parser`] with `doomfront`-specific helpers.
 
-#![allow(clippy::type_complexity)] // Each complex type only used once
+#![allow(clippy::type_complexity)] // Each complex type is only used once.
 
 use arrayvec::ArrayVec;
 use chumsky::{

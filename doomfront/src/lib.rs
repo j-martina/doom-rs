@@ -23,11 +23,13 @@
 pub extern crate chumsky;
 pub extern crate rowan;
 
-pub mod comb;
 pub mod cvarinfo;
+
+pub mod comb;
 pub mod ext;
 pub mod help;
 mod repr;
+
 #[cfg(test)]
 mod test;
 

@@ -107,7 +107,7 @@ fn default(src: &str) -> impl Parser<char, ParseOut, Error = ParseError> + Clone
 						char::from_u32(u32::from_str_radix(&digits, 16).unwrap()).unwrap_or_else(
 							|| {
 								emit(ParseError::custom(span, "invalid UTF-8 character"));
-								'\u{FFFD}' // Unicode replacement character
+								'\u{FFFD}' // Unicode replacement character.
 							},
 						)
 					}),

@@ -31,7 +31,7 @@ pub enum Syn {
 
 	/// The type specifier `bool`.
 	TypeBool,
-	// The type specifier `color`.
+	/// The type specifier `color`.
 	TypeColor,
 	/// The type specifier `float`.
 	TypeFloat,
