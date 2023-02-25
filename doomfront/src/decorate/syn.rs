@@ -10,6 +10,30 @@ use super::ast;
 #[repr(u16)]
 pub enum Syn {
 	// High-level composites ///////////////////////////////////////////////////
+	/// `enum {};`
+	EnumDef,
+	/// `NAME = expr`
+	EnumVariant,
+	/// e.g. `expr + expr`
+	ExprBinary,
+	/// `expr()`
+	ExprCall,
+	/// `expr[expr]`; array element access.
+	ExprIndex,
+	/// e.g. `expr++` or `expr?`
+	ExprPostfix,
+	/// e.g. `++expr`
+	ExprPrefix,
+	/// `expr = expr ? expr : expr`
+	ExprTernary,
+	/// Syntax node with just a [`Syn::Ident`] token as a child.
+	/// Used as part of function declarations, variable bindings, et cetera.
+	/// Not to be confused with the [name literal](Syn::LitName).
+	Name,
+	/// `ident:`. Used in actor state definition blocks.
+	/// Distinct from [`Syn::Name`] since it does not introduce a symbol into a scope.
+	Label,
+	Literal,
 
 	// Soon!
 
@@ -42,8 +66,6 @@ pub enum Syn {
 	LitInt,
 	/// A string delimited by single-quotes (`'`).
 	LitName,
-	/// The exact string `null`.
-	LitNull,
 	LitString,
 	/// The exact string `true`.
 	LitTrue,
@@ -131,6 +153,8 @@ pub enum Syn {
 	Plus2,
 	/// `+=`
 	PlusEq,
+	/// `?`
+	Question,
 	/// `;`
 	Semicolon,
 	/// `/`
@@ -179,4 +203,12 @@ impl LangExt for Syn {
 
 impl LangComment for Syn {
 	const SYN_COMMENT: Self::Kind = Self::Comment;
+}
+
+impl Syn {
+	/// Alternatively "is whitespace or comment".
+	#[must_use]
+	pub fn is_trivia(&self) -> bool {
+		matches!(self, Syn::Comment | Syn::Whitespace)
+	}
 }
