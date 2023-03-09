@@ -1,2 +1,5 @@
 [workspace]
 members = ["doomfront", "stardate", "subterra"]
+
+[profile.dev.package."*"]
+opt-level = 3
